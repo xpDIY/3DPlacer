@@ -3,7 +3,6 @@ The repo contains the design for converting the 3d printer to pick and place mac
 ## Features
 * Part rotation
 * Airpump connectivity
-* Lookdown camera
 * Adaptability for different 3D printers
 * Compatible with openpnp
 * Standard Lego style build plate supporting good extendability
