@@ -9,10 +9,7 @@ The repo contains the design for converting the 3d printer to pick and place mac
 * Standard Lego style build plate supporting good extendability
 
 For more info, please refer to https://xpdiy.io
-
-
-Currently it is work in progress, will be updated soon. Stay tuned.
-
+Youtube channel: https://www.youtube.com/@xpdiy
 
 
 Shield: [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
