@@ -1,0 +1,12 @@
+partName;belongToComponent;spec;quantity;example model;Comment
+USB bottom camera;bottom camera,>1m pixel,70 degree,28mm focal length,25mmx30mm(wxh),<15mm height;1;"ov9726; ov3660";
+USB top camera;Nozzle head bundle (advanced version);>1m pixel,70 degree,28mm focal length,25mmx30mm(wxh),<15mm height;1;ov9726,ov3660;
+stepper motor;Nozzle head bundle all version;42 stepper motor, <=30mm height, <=1.8degree angle resolution, 5mm shaft diameter,>10mm shaft length;1;;
+stepper motor screw;Nozzle head bundle all version;m3 screw;4;;
+spring;Nozzle head bundle all version;16mm inner diameter,1mm wire diameter,30mm length;1;;
+Nozzle bearing;Nozzle head bundle all version;15mm inner diameter,21mm outer diameter,4mm height;2;;
+Air pump bearing;Nozzle head bundle all version;6mm inner diameter,12mm outer diameter,4mm height;1;;
+sealing ring;Nozzle head bundle all version;6mm inner diameter,8mm outer diameter,2mm height;1;;
+air pump;Air pump;12v mini airpump, >=4L/min flow, with in and out air flow, 4mm diameter for air intake;1;;
+air pump tube;Air pump;6mm outer diameter,4mm inner diameter;1;;
+high power resistor;Air pump;10ohm for 12v printer,20ohm for 24v printer;1;;depend on the printer,some printer give 12v,some give 24v for part cooling fan, in order to limit the current, high power resistor connected in series to airpump."
