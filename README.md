@@ -6,6 +6,8 @@ The repo contains the design for converting the 3d printer to pick and place mac
 * Adaptability for different 3D printers (currently supporting Ender CR10 and AnyCubic Mega-zero)
 * Compatible with openpnp
 * Standard Lego style build plate supporting good extendability
+* 30+ feeder can be mounted on 220x220mm plate
+* 3D printed nozzle tip and JUKI nozzle tip supported
 ![3DPlacer for Anycubic Mega SE](https://github.com/xpDIY/3DPlacer/blob/main/pictures/3dpnp_mega_se.jpg)
 
 For more info, please refer to https://xpdiy.io
