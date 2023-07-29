@@ -3,7 +3,10 @@ The repo contains the design for converting the 3d printer to pick and place mac
 ## Features
 * Part rotation
 * Airpump connectivity
-* Adaptability for different 3D printers (currently supporting Ender CR10 and AnyCubic Mega-zero)
+* Adaptability for different 3D printers
+  - Ender3 v2
+  - Anycubic Mega SE
+  - Ender CR10
 * Compatible with openpnp
 * Standard Lego style build plate supporting good extendability
 * 30+ feeder can be mounted on 220x220mm plate
