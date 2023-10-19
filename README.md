@@ -1,5 +1,9 @@
 # 3DPlacer
-The repo contains the design for converting the 3d printer to pick and place machine.
+3DPlacer is an adapter to convert 3D printer into pick and place machine that used 
+for mounting SMT component into PCB. The aim is to make life easier for people who DIY their PCB 
+and doesn't want to spend >$1k. While cost is low, the project still aim to bring enough accuracy
+to mount tiny component (ex. 0201, 0402). Also one main goal is to make conversion simple and straight 
+forward so that user can switch between 3D printing and PnP function in couple of minutes.
 ## Features
 * Part rotation
 * Airpump connectivity
@@ -7,11 +11,12 @@ The repo contains the design for converting the 3d printer to pick and place mac
   - Ender3 v2
   - Anycubic Mega SE
   - Ender CR10
+  - Kingroon kp3s pro s1
 * Compatible with openpnp
 * Standard Lego style build plate supporting good extendability
 * 30+ feeder can be mounted on 220x220mm plate
 * 3D printed nozzle tip and JUKI nozzle tip supported
-![3DPlacer for Anycubic Mega SE](https://github.com/xpDIY/3DPlacer/blob/main/pictures/3dpnp_mega_se.jpg)
+![3DPlacer for Ender3 v2](https://github.com/xpDIY/3DPlacer/blob/main/pictures/3dplacer_ender3_v2.jpg)
 
 For more info, please refer to https://xpdiy.io
 Youtube channel: https://www.youtube.com/@xpdiy
