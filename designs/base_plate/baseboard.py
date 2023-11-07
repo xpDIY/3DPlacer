@@ -11,13 +11,16 @@ lclip=3 # number of space to place the clip
 wclip=3 # number of space to place the clip
 toClip=True # to allow clipping space to be created
 toCutBottom=True # to cut the bottom to save material
+componentHole=True #to provide component hole or not
 #
 # Lego Brick Constants-- these make a Lego brick a Lego :)
 #
 clearance = 0.1
 bumpDiam = 4.8
-bumpHeight = 3
+bumpHeight = 4
 height = 3.2
+componentHoleDepth=1.5 # the depth to hold the comopnent in the back of PCB
+cutBottomHeight=0
 
 rBotPitch = w/rBot
 cBotPitch = d/cBot
@@ -36,12 +39,17 @@ total_width = w #wbumps*pitch - 2.0*clearance
 # make the base
 s = cq.Workplane("XY").box(total_length, total_width, height)
 if toCutBottom:
-    toCut = cq.Workplane("XY").workplane(offset=-height/2-1).rarray(rBotPitch,cBotPitch,rBot,cBot).rect(rBotPitch*botFactor,cBotPitch*botFactor).extrude(height)
+    toCut = cq.Workplane("XY").workplane(offset=-height/2-1).rarray(rBotPitch,cBotPitch,rBot,cBot).rect(rBotPitch*botFactor,cBotPitch*botFactor).extrude(cutBottomHeight+1)
     s=s.cut(toCut)
 # make the bumps on the top
 s = (s.faces(">Z").workplane().
     rarray(pitch, pitch, lbumps, wbumps, True).circle(bumpDiam / 2.0)
     .extrude(bumpHeight))#.edges(">Z").fillet(0.3)
+#comopnent holder
+if componentHole:
+    ch = cq.Workplane("XY").workplane(offset=height/2).rarray(pitch, pitch, lbumps+1, wbumps+1, True).rect(bumpDiam,bumpDiam).extrude(-componentHoleDepth)#.edges(">Z").fillet(0.3)
+    s = s.cut(ch)
+
 
 if toClip:
     toCut = cq.Workplane("XY").workplane(offset=height/2).rarray((w-8-wbumpSize),(d-16-lbumpSize)/(lclip-1),2,lclip).rect(8+wbumpSize,16+lbumpSize).extrude(2*height)
