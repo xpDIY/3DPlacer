@@ -28,22 +28,24 @@ Used to read back component info, ex. feeder, fiducial, camera etc. If no compon
   If component id specified, then it will return that specific component info
   Information included in the return of gcode contains (for different component, field will be different, the mandatary ones are name, position, type, id)
   
-  * component type - t: type, can be <fed, fid, cam, chg, stp,lig>, this can be extended, fed: feeder, fid:fiducial, cam: camera, chg: change station, stp: strip board, lig:light
-  * component id - id: id of component, will be unique accorss all components
-  * component position - r: row, c: column
-  * component dimension - w: width, l: length, h: height
-  * component name - n: name
-  * component status - st: status, general ones are <ok, err>, different component can have different status, ex. feeder can have <end, jam>, light can have <on,off>
-  * component content - tw: tape width, ex. 8, 12, 16..
-  * component operate offset: ox: offset x, oy: offset y, this is the offset from contact point of the slot. For feeder, this means pick position, for camera, this means camera center position. For fiducial, this means the fiducial mark position.
+  * **type** - t: type, can be **<fed, fid, cam, chg, stp,lig>**, this can be extended, fed: feeder, fid:fiducial, cam: camera, chg: change station, stp: strip board, lig:light
+  * **id** - id: id of component, will be unique accorss all components
+  * **position**  - r: row, c: column
+  * **dimension** - w: width, l: length, h: height
+  * **name** - n: name ```Note: name will always be the last element to avoid for the escaping```
+  * **status** - st: status, general ones are **<ok, err>**, different component can have different status, ex. feeder can have **<end, jam>**, light can have **<on,off>**
+  * **content** - tw: tape width, ex. 8, 12, 16..
+  * **operate offset**: ox: offset x, oy: offset y, this is the offset from contact point of the slot. For feeder, this means pick position, for camera, this means camera center position. For fiducial, this means the fiducial mark position.
+
+
  
   #### Component specific field
   * Feeder - feeder can have some specific fields
     * p: pitch, depend on tape inside, it can have 2mm, 4mm, or other pitch
     * ad: tape advance, if not zero, means it is advancing, when finish advancing, it will be reset to 0,  this field can be used to control advacning. ex. ad:1 means advance 1 pitch, see M887 gcode, ad:-1 means travel back 1 pitch position
-    * st: status of feeder can be <ok,err,end,jam>, ok:good, err:unknown err, end:tap ended, jam: tap jammed
+    * st: status of feeder can be **<ok,err,end,jam>**, ok:good, err:unknown err, end:tap ended, jam: tap jammed
   * Light - light can have some specific status
-    * st: status of light can be <on, off>. The light can be on or off. The on/off can be used as status, and also as control. See M887 for detial.
+    * st: status of light can be **<on, off>**. The light can be on or off. The on/off can be used as status, and also as control. See M887 for detial.
    
   #### Usage
   ```
@@ -60,13 +62,13 @@ Used to read back component info, ex. feeder, fiducial, camera etc. If no compon
     t:cam,id:44444444,w:32,l:32,h:43,r:10,c:10,ox:8,oy:8,name:bot[CRLF]
     t:lig,id:55555555,r:1,c:1,st:on,n:top[CRLF]
     t:lig,id:66666666,r:5,c:5,st:off,n:bot[CRLF]
-  
   ```
 
-### M887 - Send command to component. This command can be ued to update component info, ex. name, offset, etc.
+### M887
+Send command to component. This command can be ued to update component info, ex. name, offset, etc.
   #### usage:
   ```
-  M887 C{ID} [Action]
+  M887 C{ID} [field:value]
   ```
   #### examples: 
   ```
