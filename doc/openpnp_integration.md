@@ -58,8 +58,8 @@ Used to read back component info, ex. feeder, fiducial, camera etc. If no compon
     t:fid,id:22222222,w:12,l:12,h:43,r:1,c:1,ox:3,oy:3,n:pri[CRLF]
     t:fid,id:33333333,w:12,l:12,h:37,r:10,c:10,ox:3,oy:3,name:sec[CRLF]
     t:cam,id:44444444,w:32,l:32,h:43,r:10,c:10,ox:8,oy:8,name:bot[CRLF]
-    t:lig,id:55555555,st:on,n:top[CRLF]
-    t:lig,id:66666666,st:off,n:bot[CRLF]
+    t:lig,id:55555555,r:1,c:1,st:on,n:top[CRLF]
+    t:lig,id:66666666,r:5,c:5,st:off,n:bot[CRLF]
   
   ```
 
