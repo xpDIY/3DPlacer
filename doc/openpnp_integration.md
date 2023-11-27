@@ -20,11 +20,11 @@ Firmware information code, this is used to make sure the openpnp can read the fi
   ```
   #### Example
   ```
-  3DPlacer v.01
+  3DPlacer FIRMWARE v.01
   ```
 
 ### M888
-Used to read back component info, ex. feeder, fiducial, camera etc. If no component id specified, then it will return all component info, components info will be returned as an array of components, each component is in separate line, the line ending will be CRLF.
+Used to read back component info, ex. feeder, fiducial, camera etc. If no component id specified, then it will return all component info, components info will be returned as an array of components, each component will be separated by semicolon (;), the line ending will be CRLF.
   If component id specified, then it will return that specific component info
   Information included in the return of gcode contains (for different component, field will be different, the mandatary ones are name, position, type, id)
   
@@ -54,14 +54,9 @@ Used to read back component info, ex. feeder, fiducial, camera etc. If no compon
   #### Examples  
   ```
   M888 C12345678; returns t:fed,id:12345678,w:12,l:64,h:43,ox:-5,oy:-2.1,tw:8,st:ok,r:4,c:2,n:100kohm
-  M888;returns 
-    t:fed,id:12345678,w:12,l:64,h:43,ox:-5,oy:-2.1,tw:8,st:ok,r:4,c:2,n:100kohm[CRLF]
-    t:fed,id:12345679,w:16,l:64,h:43,ox:-5,oy:-4.1,tw:8,st:ok,r:3,c:2,n:100uf[CRLF]
-    t:fid,id:22222222,w:12,l:12,h:43,r:1,c:1,ox:3,oy:3,n:pri[CRLF]
-    t:fid,id:33333333,w:12,l:12,h:37,r:10,c:10,ox:3,oy:3,name:sec[CRLF]
-    t:cam,id:44444444,w:32,l:32,h:43,r:10,c:10,ox:8,oy:8,name:bot[CRLF]
-    t:lig,id:55555555,r:1,c:1,st:on,n:top[CRLF]
-    t:lig,id:66666666,r:5,c:5,st:off,n:bot[CRLF]
+
+  ; below command returning all components separated by semicolon (;)
+  M888;returns t:fed,id:12345678,w:12,l:64,h:43,ox:-5,oy:-2.1,tw:8,st:ok,r:4,c:2,n:100kohm; t:fed,id:12345679,w:16,l:64,h:43,ox:-5,oy:-4.1,tw:8,st:ok,r:3,c:2,n:100uf; t:fid,id:22222222,w:12,l:12,h:43,r:1,c:1,ox:3,oy:3,n:pri; t:fid,id:33333333,w:12,l:12,h:37,r:10,c:10,ox:3,oy:3,name:sec; t:cam,id:44444444,w:32,l:32,h:43,r:10,c:10,ox:8,oy:8,name:bot; t:lig,id:55555555,r:1,c:1,st:on,n:top; t:lig,id:66666666,r:5,c:5,st:off,n:bot[CRLF]
   ```
 
 ### M887
