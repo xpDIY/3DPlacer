@@ -7,6 +7,26 @@ In order to integrate with Openpnp, the idea is to provide various G code so tha
 The system contains openpnp, strip board and components. When user starts job or setup the components in openpnp, ex. feeders, openpnp will fire command (described in section below), then the command string will be passed to strip boards, strip boards will be responbile to pass the strings further to peticular components. The components received the command will then interpret the command and send the response back. The strip board will be used as a tunnel which forward the infomation.
 Communication between Openpnp and strip board is serial communication. Strip board can communicate with other strip boards, the protocol used here is I2C. Then under each strip board, there will be multiple components, in order to save space, 1 wire UART is used. The position sensing is achieved by resistor dividing, with 3.3v supply voltage, depend on position, it will sense max 50 positions, each position can have 66 mv gap which gives enough space for detecting the position consistently.
 
+```mermaid
+flowchart LR
+Openpnp <--gcode--> ControlBoard <--i2c--> StripPCB1
+ControlBoard<--i2c-->StripPCB2
+ControlBoard<--i2c--> ...
+ControlBoard<--i2c-->StripPCBn
+StripPCB1<--1w-->Feeder1_1
+StripPCB1<--1w-->Feeder1_2
+StripPCB1<--1w-->Feeder1_X
+
+StripPCB2<--1w-->Feeder2_1
+StripPCB2<--1w-->Feeder2_2
+StripPCB2<--1w-->Feeder2_X
+
+StripPCBn<--1w-->Feedern_1
+StripPCBn<--1w-->Feedern_2
+StripPCBn<--1w-->Feedern_X
+
+```
+
 ## GCodes
 ### M115
 Firmware information code, this is used to make sure the openpnp can read the firmware therefore can use the I&S (issue and solution) wizard for better support setting up the machine.
@@ -83,7 +103,7 @@ The strip PCB mcu are connected through I2C bus (TBD, could change to UART) to c
 This is used when control board wants to know what strip is available in the system. Control board will fire a command `ping[CRLF]` without parameter. It is assumed that each strip board has been configured to a row or column address. 
 
 Given the baseplate, between the first and second lego bump will be column 1 or row 1 depend on orientation of strip PCB. When a strip board has been mounted to the plate, the left lowest of its contact point will define its row and column. Then the board knows its own dimension. In this way, the conversion from row, column to board position will work for all strip boards, no need to calibrate each board separately. The address is illustrated as picture below.
-![Row and column address](https://github.com/xpDIY/3DPlacer/blob/main/pictures/rowAndColumnForBaseplate.png)
+![Row and column address](https://github.com/xpDIY/3DPlacer/blob/develop/pictures/rowAndColumnForBaseplate.jpg)
 
 When ping has been received by all strip boards, each strip board will return with their id and row, column based on their column, row address. If vertical oriented, only column will returned, for horizontal strip, only row will be returned. Each strip board has 2ms slot they can transfer. Ex. strip board with column address 1 will send from the 0-2ms. Column address will start sending from 8th ms till 10th ms. It will support up to 50 strips (100ms), Take 2 column/row strip board for ex. 16mm x 50 = 800mm, which means it can support max 80 cm baseplate.
 
