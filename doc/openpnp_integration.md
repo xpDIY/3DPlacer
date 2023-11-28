@@ -73,3 +73,59 @@ Send command to component. This command can be ued to update component info, ex.
   M887 C55555555 st:off ;switch top light off
   ```
 
+## Control protocol
+
+### Control board to strip PCB
+The strip PCB mcu are connected through I2C bus (TBD, could change to UART) to control PCB. The main purpose is to forward the command from control PCB to components attached to strip PCB. This document defines the command and reply of the control board to strip PCB.
+
+#### Commands
+##### Ping
+This is used when control board wants to know what strip is available in the system. Control board will fire a command `ping[CRLF]` without parameter. It is assumed that each strip board has been configured to a row or column address. 
+
+Given the baseplate, between the first and second lego bump will be column 1 or row 1 depend on orientation of strip PCB. When a strip board has been mounted to the plate, the left lowest of its contact point will define its row and column. Then the board knows its own dimension. In this way, the conversion from row, column to board position will work for all strip boards, no need to calibrate each board separately. The address is illustrated as picture below.
+![Row and column address](https://github.com/xpDIY/3DPlacer/blob/main/pictures/rowAndColumnForBaseplate.png)
+
+When ping has been received by all strip boards, each strip board will return with their id and row, column based on their column, row address. If vertical oriented, only column will returned, for horizontal strip, only row will be returned. Each strip board has 2ms slot they can transfer. Ex. strip board with column address 1 will send from the 0-2ms. Column address will start sending from 8th ms till 10th ms. It will support up to 50 strips (100ms), Take 2 column/row strip board for ex. 16mm x 50 = 800mm, which means it can support max 80 cm baseplate.
+
+Example:
+```
+ping; returns 
+```
+|time frame|content|
+| ---  | --- |
+|0-2ms|id:11111111,c:1|
+|2-4ms|empty|
+|4-6ms|empty|
+|6-8ms|empty|
+|8-10ms|id:22222222,c:4|
+|10-12ms|empty|
+
+##### M888
+
+When openpnp fires M888 command, the control board first send a `ping` to get all the strips available. Then it fires `M888 sp:{strip id}` to get all the components connected to the strip. M888 can also support getting only one component info, with `M888 id:{component id}`, it will send command to all strip, the strip will then forward the command to all its components, then the component with the right id will return info. In this way, it can quickly get info from one of the components. If user knows about which strip it has, user can fire `M888 sp:{strip id} id:{component id}`, then only the strip with the right id will forward the command to all its components.
+
+Synopsis
+```
+M888 sp:{strip id} [id:{component id}]
+```
+
+Examples
+```
+M888 sp:11111111[CRLF]; returns all component info under strip pcb 11111111. 
+;For ex. t:fed,id:12345678,w:12,l:64,h:43,ox:-5,oy:-2.1,tw:8,st:ok,r:4,c:2,n:100kohm; t:fed,id:12345679,w:16,l:64,h:43,ox:-5,oy:-4.1,tw:8,st:ok,r:3,c:2,n:100uf; t:fid,id:22222222,w:12,l:12,h:43,r:1,c:1,ox:3,oy:3,n:pri[CRLF]
+
+M888 id:12345678[CRLF]; return only component with id 12345678, for ex. t:fed,id:12345678,w:12,l:64,h:43,ox:-5,oy:-2.1,tw:8,st:ok,r:4,c:2,n:100kohm;
+```
+
+##### M887
+
+Synopsis
+```
+M887 [sp:{strip id}] id:{component id} [{property}:{propertyValue}]
+```
+This command updates the component with the right id to the specified value.
+
+Examples
+```
+M887 id:12345678 tw:12,n:20kohm[CRLF]; this command updates the component 12345678 to 12mm tape width and 20kohm as its name. The info will be stored into component's flash so it will be peristed.
+```
