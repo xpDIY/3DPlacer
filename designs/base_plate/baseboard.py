@@ -1,8 +1,8 @@
 import cadquery as cq
 
 
-w=234 # total width of the plate
-d=234 # total depth of the plate
+w=310 # total width of the plate
+d=230 # total depth of the plate
 pitch = 8.0 # pitch of the bumps
 rBot=8 # bottom rect section row, for saving printing material
 cBot=8 # bottom rect section column, for saving prining material
@@ -52,10 +52,10 @@ if componentHole:
 
 
 if toClip:
-    toCut = cq.Workplane("XY").workplane(offset=height/2).rarray((w-8-wbumpSize),(d-16-lbumpSize)/(lclip-1),2,lclip).rect(8+wbumpSize,16+lbumpSize).extrude(2*height)
+    toCut = cq.Workplane("XY").workplane(offset=height/2).rarray((d-16-lbumpSize)/(lclip-1),(w-wbumpSize),lclip,2).rect(16+lbumpSize,8+wbumpSize).extrude(2*height)
     s = s.cut(toCut)
 
-    toCut = cq.Workplane("XY").workplane(offset=height/2).rarray((w-16-wbumpSize)/(wclip-1),d-8-lbumpSize,wclip,2).rect(16+wbumpSize,8+lbumpSize).extrude(2*height)
+    toCut = cq.Workplane("XY").workplane(offset=height/2).rarray(d-8-lbumpSize,(w-16-wbumpSize)/(wclip-1),2,wclip).rect(8+lbumpSize,16+wbumpSize).extrude(2*height)
     s = s.cut(toCut)
 
 show_object(s)
