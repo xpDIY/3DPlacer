@@ -18,6 +18,33 @@ forward so that user can switch between 3D printing and PnP function in couple o
 * 3D printed nozzle tip and JUKI nozzle tip supported
 ![3DPlacer for Ender3 v2](https://github.com/xpDIY/3DPlacer/blob/main/pictures/3dplacer_ender3_v2.jpg)
 
+## Software
+* Position aware feature supported
+* Both controller and feeder firmware included
+
+### Usage
+
+#### Pre-requsite
+* DapLink or other programming interface support ARM M0 MCU with SWD interface
+* VCCode and clang compiler installed
+
+#### Compile
+* Enter sw folder
+* make clean
+* make
+
+#### Flash
+* Make sure programmer is connected correctly to SWD interface
+* run command `make flash`
+
+## Contribution
+
+Any contribution will be appreciated!
+
+* If you see any bug or improvement, feel free to create a pull request and explain about the pull request
+
+Thanks and enjoy!
+
 For more info, please refer to https://xpdiy.io
 Youtube channel: https://www.youtube.com/@xpdiy
 
