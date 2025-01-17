@@ -26,7 +26,7 @@ forward so that user can switch between 3D printing and PnP function in couple o
 
 #### Pre-requsite
 * DapLink or other programming interface support ARM M0 MCU with SWD interface
-* VCCode and clang compiler installed
+* clang compiler installed
 
 #### Compile
 * Enter sw folder
@@ -42,6 +42,10 @@ forward so that user can switch between 3D printing and PnP function in couple o
 Any contribution will be appreciated!
 
 * If you see any bug or improvement, feel free to create a pull request and explain about the pull request
+
+## References
+
+The software project use PY32F0 template project as starting point, please refer to https://github.com/IOsetting/py32f0-template for detailed information.
 
 Thanks and enjoy!
 
