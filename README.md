@@ -29,7 +29,7 @@ forward so that user can switch between 3D printing and PnP function in couple o
 * clang compiler installed
 
 #### Compile
-* Enter sw folder
+* Enter sw/feeder or sw/control folder
 * make clean
 * make
 
