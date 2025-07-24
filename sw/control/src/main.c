@@ -9,7 +9,12 @@ static void APP_GPIO_Config(void);
 
 void APP_ErrorHandler(void)
 { 
-  while (1);
+  while (1){
+    for(int i=0;i<100;i++){
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+      HAL_Delay(100);
+    }
+  }
 }
 
 int main(void)
@@ -21,17 +26,20 @@ int main(void)
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,GPIO_PIN_RESET);
   USART2_Config();
   USART1_Config();
+  /*
   if (HAL_UART_Receive_IT(&UartHandle, (uint8_t *)aRxBuffer, 1) != HAL_OK)
   {
     APP_ErrorHandler();
   }
+    */
+
   
   while (1)
   { 
-    //process_uart_data(receiveOw);
+    ReceiveUart();
+    ProcessAMsg();
   }
 }
-
 
 static void APP_GPIO_Config(void)
 {

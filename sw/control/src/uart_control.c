@@ -15,6 +15,7 @@ uint8_t bRxBuffer[2] = {0x00};
 char aMsg[100];
 char msgBufA[MESSAGE_BUF_SIZE];
 char *pMsg = msgBufA;
+uint8_t aMsgRdy = 0;
 
 uint8_t aIdx=0;
 volatile uint8_t bIdx=0;
@@ -150,7 +151,12 @@ void start_sending_one_wire(UART_HandleTypeDef *UartHandle){
 
 void UART_ErrorHandler(void)
 { 
-  while (1);
+  while (1){
+    for(int i=0;i<100;i++){
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+      HAL_Delay(100);
+    }
+  }
 }
 
 /**
@@ -330,6 +336,7 @@ uint8_t process_uart_data(uint8_t toReceive,uint8_t forward)
         bIdx=0;
       received=1;
     }
+
     if(sendIdx!=bIdx && forward){
       if(Uart_Send_Finished(&UartHandle) == HAL_OK){      
         if(Uart_Begin_Send_1Byte(&UartHandle,(uint8_t *)pMsg+sendIdx) == HAL_OK){
@@ -344,20 +351,69 @@ uint8_t process_uart_data(uint8_t toReceive,uint8_t forward)
   return received;
 }
 
+void ReceiveUart(){
+  if(HAL_UART_Receive(&UartHandle, (uint8_t *)aRxBuffer, 1, HAL_MAX_DELAY) == HAL_OK){
+    if(*aRxBuffer==13){
+      //res = parse_gcode(aMsg, &UartHandle);
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); //toggle the led to indicate a new message received
+      aMsgRdy = 1;
+      aIdx=0;
+    }else{
+      if(aIdx < maxLength-1){
+        aMsg[aIdx++] = *aRxBuffer;
+        aMsg[aIdx] = 0;
+      }
+    }
+    if(aIdx >= maxLength){
+      //reset the buffer
+      UART_ErrorHandler();
+      aIdx = 0;
+      memset(aMsg, 0, sizeof(aMsg));
+    }
+  }else{
+    UART_ErrorHandler();
+  }
+}
+
+void ProcessAMsg(){
+  if(aMsgRdy){
+    aMsgRdy = 0;
+    //process the message
+    res = parse_gcode(aMsg, &UartHandle);
+  }
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartCBHandle)
 {
   if(UartCBHandle == &UartHandle){
-    
-    if(aIdx < maxLength){
+      if(*aRxBuffer==13){
+      //res = parse_gcode(aMsg, UartCBHandle);
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); //toggle the led to indicate a new message received
+      aMsgRdy = 1;
+      aIdx=0;
+    }
+    /*
+    if(aIdx < maxLength-1){
       aMsg[aIdx++] = *aRxBuffer;
       aMsg[aIdx] = 0;
     }
 
     //a new line, that means receiving is over
     if(*aRxBuffer==13){
-      res = parse_gcode(aMsg, UartCBHandle);
+      //res = parse_gcode(aMsg, UartCBHandle);
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); //toggle the led to indicate a new message received
+      aMsgRdy = 1;
       aIdx=0;
     }
+
+    if(aIdx >= maxLength){
+      //reset the buffer
+      UART_ErrorHandler();
+      aIdx = 0;
+      memset(aMsg, 0, sizeof(aMsg));
+    }
+      */
+
 
     if (HAL_UART_Receive_IT(UartCBHandle, (uint8_t *)aRxBuffer, 1) != HAL_OK)
     {

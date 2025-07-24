@@ -19,6 +19,8 @@ volatile char rxBuf[1];
 volatile uint8_t idx=0, idxA=0;
 const uint8_t maxLength = 100;
 int8_t res;
+uint32_t rpos,cpos;
+
 
 /**
   * @brief  USART GPIO Config,Mode Config,115200 8-N-1
@@ -191,7 +193,6 @@ void process_ow_data()
     if(++idxA>4) idxA=0;
 
     if(bMsg[idx-1] == 13){
-      //HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_0);
       parse_gcode(bMsg,&UartOwHandle);
       idx=0;
     }
@@ -263,14 +264,14 @@ void APP_AdcConfig(void)
   }
   //config row channel
   sConfig.Rank         = ADC_RANK_CHANNEL_NUMBER;
-  sConfig.Channel      = ADC_CHANNEL_3;
+  sConfig.Channel      = ADC_CHANNEL_5;
   if (HAL_ADC_ConfigChannel(&AdcHandle, &sConfig) != HAL_OK)                      
   {
     UART_ErrorHandler();
   }
   //config column channel
   sConfig.Rank         = ADC_RANK_CHANNEL_NUMBER;
-  sConfig.Channel      = ADC_CHANNEL_4;
+  sConfig.Channel      = ADC_CHANNEL_6;
   if (HAL_ADC_ConfigChannel(&AdcHandle, &sConfig) != HAL_OK)                      
   {
     UART_ErrorHandler();
@@ -283,26 +284,34 @@ void APP_AdcConfig(void)
   }
 }
 
+void init_adc()
+{
+  PollPos(&rpos,&cpos);
+}
+
+uint32_t get_cpos(){
+  return cpos;
+}
+
+uint32_t get_rpos(){
+  return rpos;
+}
+
 void PollPos(uint32_t * rpos, uint32_t *cpos){
-  if(HAL_ADC_PollForConversion(&AdcHandle,1) == HAL_OK){
-    *rpos = HAL_ADC_GetValue(&AdcHandle);
-  }else{
-    *rpos=0;
+  *rpos = 0;
+  *cpos = 0;
+  int avg_cnt = 1000;
+
+  for(int i=0;i<avg_cnt;i++){
+    if(HAL_ADC_PollForConversion(&AdcHandle,3) == HAL_OK){
+      *rpos += HAL_ADC_GetValue(&AdcHandle);
+    }
+    if(HAL_ADC_PollForConversion(&AdcHandle,3) == HAL_OK){
+      *cpos +=HAL_ADC_GetValue(&AdcHandle);
+    }
   }
-  if(HAL_ADC_PollForConversion(&AdcHandle,1) == HAL_OK){
-    *cpos = HAL_ADC_GetValue(&AdcHandle);
-  }else{
-    *cpos=0;
-  }
-  if(HAL_ADC_PollForConversion(&AdcHandle,1) == HAL_OK){
-    *rpos = HAL_ADC_GetValue(&AdcHandle);
-  }else{
-    *rpos=0;
-  }
-  if(HAL_ADC_PollForConversion(&AdcHandle,1) == HAL_OK){
-    *cpos = HAL_ADC_GetValue(&AdcHandle);
-  }else{
-    *cpos=0;
-  }  
+
+  *rpos = *rpos/avg_cnt;
+  *cpos = *cpos/avg_cnt;
 
 }

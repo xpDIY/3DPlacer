@@ -26,7 +26,7 @@
 #define USART1_TX_GPIO_PORT                GPIOA
 #define USART1_TX_GPIO_CLK_ENABLE()        __HAL_RCC_GPIOA_CLK_ENABLE()
 #define USART1_TX_PIN                      PIN_OW
-#define USART1_TX_AF                       GPIO_AF8_USART1
+#define USART1_TX_AF                       GPIO_AF1_USART1
 #define USART1_IRQHandler                  USART1_IRQHandler
 #define USART1_IRQ                         USART1_IRQn
 
@@ -35,6 +35,9 @@
 void USART1_Config(void);
 void APP_AdcConfig(void);
 void process_ow_data();
+void init_adc();
+uint32_t get_cpos();
+uint32_t get_rpos();
 void PollPos(uint32_t *rpos, uint32_t *cpos);
 extern UART_HandleTypeDef UartHandle;
 extern UART_HandleTypeDef UartOwHandle;
