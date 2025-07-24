@@ -22,21 +22,27 @@ int main(void)
   APP_GPIO_Config();
   //enable motor
   HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_EN,GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOA,PIN_LED2,GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB,PIN_LED2,GPIO_PIN_RESET);
   //This is for led push button
-  HAL_GPIO_WritePin(GPIOA,PIN_LED2,GPIO_PIN_RESET);
   read_feeder_data_from_flash();
   //USART2_Config();
   USART1_Config();
   APP_AdcConfig();
   HAL_HalfDuplex_EnableReceiver(&UartOwHandle);
+  for(volatile int i=0;i<1000000;++i); //wait for voltage to stabilize
+  init_adc();
+  HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_SET);
+  //turn on part led
+
+  //start_motor();
   /*
   if (HAL_UART_Receive_IT(&UartOwHandle, (uint8_t *)aRxBuffer, 1) != HAL_OK)
   {
     APP_ErrorHandler();
   }
   */
+ 
   while (1)
   {
     process_ow_data();
@@ -72,7 +78,7 @@ static void APP_GPIO_Config(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = PIN_MOTOR_A2;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -90,11 +96,17 @@ static void APP_GPIO_Config(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);    
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);    
+
+  GPIO_InitStruct.Pin = PIN_PART_LED;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);    
 
   GPIO_InitStruct.Pin = PIN_PART_DET;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);    
 

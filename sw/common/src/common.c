@@ -1,6 +1,6 @@
 
 #include "common.h"
-
+#include <stdarg.h>
 
 int8_t flash_erase(){
   uint32_t SECTORError = 0;
@@ -60,6 +60,15 @@ char* uid_to_string(uint32_t w1, uint32_t w2, uint32_t w3){
     return b64buf;
 }
 
+uint8_t calc_checksum(const char *data) {
+    uint8_t sum = 0;
+    while (*data) {
+        sum += (uint8_t)(*data);
+        data++;
+    }
+    return sum;
+}
+
 void parse_parameters(char * param, void (*processor)(char*,char*), void (*err)()){
     int paramLen=strlen(param);
     if(paramLen > 0){
@@ -97,4 +106,26 @@ void parse_parameters(char * param, void (*processor)(char*,char*), void (*err)(
             }
         }
     }
+}
+
+int sprintfcs(char *buf,size_t bufsize, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int n = vsnprintf(buf, bufsize, fmt, args);
+    va_end(args);
+
+    if (n < 0 || (size_t)n >= bufsize) {
+        // Formatting error or buffer too small
+        return -1;
+    }
+
+    uint8_t checksum = calc_checksum(buf);
+    // Append '*' and checksum as two hex digits
+    int written = snprintf(buf + n, bufsize - n, "%02X", checksum);
+
+    if (written < 0 || (size_t)(n + written) >= bufsize) {
+        return -1;
+    }
+
+    return n + written;
 }

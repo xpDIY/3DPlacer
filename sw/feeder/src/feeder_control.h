@@ -6,6 +6,11 @@
 extern void process_feeder();
 extern void advance_feeder();
 extern void read_feeder_data_from_flash();
+extern void start_motor();
+extern void stop_motor();
+extern void led_on();
+extern void led_off();
+extern void led_ind();
 
 typedef enum{
     FEEDER_IDLE=0U,
@@ -25,6 +30,7 @@ typedef struct {
     uint8_t pitch;//pitch in mm
     int16_t h;//height in mm
     int16_t rt;//rotation in tape
+    uint16_t st; //sub type of feeder, 0 - strip, 1 - auto feeder, 2 - loose feeder
     char partId[30]; //part id
     char name[20]; //name
 }Feeder_Data_Def;

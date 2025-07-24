@@ -26,6 +26,8 @@ const char N[]="N";
 const char PI[]="PI";
 //parameter for rotation in tape
 const char RT[]="RT";
+//parameter for sub type of feeder
+const char ST[]="ST";
 
 
 // const for parameters
@@ -44,6 +46,7 @@ int ad=0;
 int n=0;
 int pi=0;
 int rt=0;
+int st=0; //sub type of feeder, 0 - strip, 1 - auto feeder, 2 - loose feeder
 char *name_buf;
 
 void process_param(char* key, char* val){
@@ -82,9 +85,11 @@ void process_param(char* key, char* val){
         rt=atoi(val);
         return;
     }     
+    if(strcmp(key,ST)==0){
+        st=atoi(val);
+        return;
+    }     
 }
-
-
 
 void done(){
     HAL_HalfDuplex_EnableTransmitter(&UartOwHandle);
@@ -105,6 +110,7 @@ void reset_param(){
     n=0;
     pi=0;
     rt=0;
+    st=0; //sub type of feeder, 0 - strip, 1 - auto feeder, 2 - loose feeder
 }
 
 void silent(){
@@ -113,13 +119,13 @@ void silent(){
 
 int get_row(uint32_t vRow){
     if(trow>0)
-        return trow - (vRow+VPRTH)/(4096/trow);
+        return trow - (vRow+VPRTH)/(4096/(trow));
     return 29-(vRow+VPRTH)/VPR;
 }
 
 int get_col(uint32_t vCol){
     if(tcol>0)
-        return (vCol+VPCTH)/(4096/(tcol+1));
+        return (vCol+VPCTH)/(4096/(tcol));
     return (vCol+VPCTH)/VPC;
 }
 
@@ -139,13 +145,20 @@ int8_t m888(char * noSpaceMsg, UART_HandleTypeDef *UartHandle)
             reset_param();
             parse_parameters(param, process_param, silent);
             //only M800, means reading all the feeder info
-            char *toret = "t:fed,id:%s,pi:%d,h:20,ox:0.2,oy:-13,rt:%d,r:%d,c:%d,n:%s;";
+            char *toret = "t:fed,id:%s,pi:%d,h:9.5,ox:0.2,oy:-13,rt:%d,r:%d,c:%d,st:%d,n:%s;";
             uint32_t rpos,cpos;
-            PollPos(&rpos,&cpos);
-            if((row == get_row(rpos)) && (col ==get_col(cpos))){
-                //advance feeder requested
+            //PollPos(&rpos,&cpos);
+            rpos = get_rpos();
+            cpos = get_cpos();
+            if((row == get_row(rpos)) && (col == get_col(cpos))){
                 if(ad!=0){
-                    advance_feeder(on_advance_finished);
+                    if(ad==1){
+                        led_on();
+                    }else if(ad==2){
+                        led_off();
+                    }
+                    done();
+                    //advance_feeder(on_advance_finished);
                     return TDP_OK;
                 }
                 //set name requested, need to write flash
@@ -161,11 +174,15 @@ int8_t m888(char * noSpaceMsg, UART_HandleTypeDef *UartHandle)
                     feeder_data.rt = rt;
                     dirty=1;
                 }
+                if(st!=0){
+                    feeder_data.st = st;
+                    dirty=1;
+                }                
 
                 if(!dirty){
                     HAL_HalfDuplex_EnableTransmitter(UartHandle);
                     sprintf(msgBuf,toret,uid_to_string(HAL_GetUIDw0(),HAL_GetUIDw1(),HAL_GetUIDw2()),
-                        feeder_data.pitch!=0xff?feeder_data.pitch:40,feeder_data.rt!=-1?feeder_data.rt:0,get_row(rpos),get_col(cpos),
+                        feeder_data.pitch!=0xff?feeder_data.pitch:40,feeder_data.rt!=-1?feeder_data.rt:0,trow,tcol,feeder_data.st!=0xffff?feeder_data.st:0,
                         feeder_data.name[0]==0xff?uid_to_string(HAL_GetUIDw0(),HAL_GetUIDw1(),HAL_GetUIDw2()):feeder_data.name);
                     HAL_UART_Transmit(UartHandle, (uint8_t *)msgBuf, strlen(msgBuf),10);
                     HAL_HalfDuplex_EnableReceiver(UartHandle);
@@ -173,6 +190,7 @@ int8_t m888(char * noSpaceMsg, UART_HandleTypeDef *UartHandle)
                     write_flash((uint32_t*)&feeder_data, sizeof(feeder_data));
                     done();
                 }
+                led_ind();
                 return TDP_OK;
             }
             //either row is the same or col is the same
