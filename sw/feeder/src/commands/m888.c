@@ -182,7 +182,7 @@ int8_t m888(char * noSpaceMsg, UART_HandleTypeDef *UartHandle)
                 if(!dirty){
                     HAL_HalfDuplex_EnableTransmitter(UartHandle);
                     sprintf(msgBuf,toret,uid_to_string(HAL_GetUIDw0(),HAL_GetUIDw1(),HAL_GetUIDw2()),
-                        feeder_data.pitch!=0xff?feeder_data.pitch:40,feeder_data.rt!=-1?feeder_data.rt:0,trow,tcol,feeder_data.st!=0xffff?feeder_data.st:0,
+                        feeder_data.pitch!=0xff?feeder_data.pitch:40,feeder_data.rt!=-1?feeder_data.rt:0,get_row(rpos),get_col(cpos),feeder_data.st!=0xffff?feeder_data.st:0,
                         feeder_data.name[0]==0xff?uid_to_string(HAL_GetUIDw0(),HAL_GetUIDw1(),HAL_GetUIDw2()):feeder_data.name);
                     HAL_UART_Transmit(UartHandle, (uint8_t *)msgBuf, strlen(msgBuf),10);
                     HAL_HalfDuplex_EnableReceiver(UartHandle);
