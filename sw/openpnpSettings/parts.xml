@@ -1,0 +1,13 @@
+<openpnp-parts>
+   <part id="FIDUCIAL-1X2-FIDUCIAL1X2" height-units="Millimeters" height="0.0" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="FIDUCIAL-1X2" speed="1.0" pick-retry-count="0"/>
+   <part id="R0805-1K" height-units="Millimeters" height="1.0" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="R0805" speed="1.0" pick-retry-count="0"/>
+   <part id="R0201-1K" height-units="Millimeters" height="0.25" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="R0201" speed="1.0" pick-retry-count="0"/>
+   <part id="R0402-1K" height-units="Millimeters" height="0.5" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="R0402" speed="1.0" pick-retry-count="0"/>
+   <part id="R0603-1K" height-units="Millimeters" height="0.75" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="R0603" speed="1.0" pick-retry-count="0"/>
+   <part fiducial-vision-id="FVS188b98db723688ea" id="FIDUCIAL-HOME" height-units="Millimeters" height="0.0" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="FIDUCIAL-HOME" speed="1.0" pick-retry-count="0"/>
+   <part id="R0402-470R" height-units="Millimeters" height="0.3" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="R0402" speed="1.0" pick-retry-count="0"/>
+   <part id="FIDUCIAL_MARK_0.5MM-FIDUCIALUFIDUCIAL_round" height-units="Millimeters" height="0.0" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="FIDUCIAL_MARK_0.5MM" speed="1.0" pick-retry-count="0"/>
+   <part id="SW-SMD_6P-L7.2-W3.5-P2.50-LS6.0-TL-MS-22C01-G010" height-units="Millimeters" height="0.0" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="SW-SMD_6P-L7.2-W3.5-P2.50-LS6.0-TL" speed="1.0" pick-retry-count="0"/>
+   <part id="HDR-TH_4P-P2.00-V-F-PM200V-11-04-H43" height-units="Millimeters" height="0.0" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="HDR-TH_4P-P2.00-V-F" speed="1.0" pick-retry-count="0"/>
+   <part id="power_push_flat-power_push_5" height-units="Millimeters" height="0.0" through-board-depth-units="Millimeters" through-board-depth="0.0" package-id="power_push_flat" speed="1.0" pick-retry-count="0"/>
+</openpnp-parts>
