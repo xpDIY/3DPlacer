@@ -31,12 +31,13 @@ FLASH_PROGRM	?= pyocd
 
 #ARM_TOOCHAIN	?= /opt/gcc-arm/gcc-arm-11.2-2022.02-x86_64-arm-none-eabi/bin
 #ARM_TOOCHAIN	?= /opt/gcc-arm/arm-gnu-toolchain-11.3.rel1-x86_64-arm-none-eabi/bin
-ARM_TOOCHAIN	?= c:/tools/arm_none_eabi/bin
+#ARM_TOOCHAIN	?= c:/tools/arm_none_eabi/bin
+ARM_TOOCHAIN	?= /opt/homebrew/bin
 
 # path to JLinkExe
 JLINKEXE		?= /opt/SEGGER/JLink/JLinkExe
 # path to PyOCD
-PYOCD_EXE		?= pyocd
+PYOCD_EXE		?= /Users/lxp/Library/Python/3.9/bin/pyocd
 
 ##### Paths ############
 

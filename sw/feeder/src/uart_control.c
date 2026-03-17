@@ -101,7 +101,7 @@ void USART1_Config(void)
     */
   GPIO_InitStruct.Pin = PIN_OW;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_NOPULL; //GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.Alternate = USART1_TX_AF;
   HAL_GPIO_Init(USART1_TX_GPIO_PORT, &GPIO_InitStruct);
@@ -300,12 +300,19 @@ uint32_t get_rpos(){
 void PollPos(uint32_t * rpos, uint32_t *cpos){
   *rpos = 0;
   *cpos = 0;
-  int avg_cnt = 1000;
+  int avg_cnt = 100;
 
   for(int i=0;i<avg_cnt;i++){
+    // Read from PA5 (ADC_CHANNEL_5) for row position
+    sConfig.Channel = ADC_CHANNEL_5;
+    HAL_ADC_ConfigChannel(&AdcHandle, &sConfig);
     if(HAL_ADC_PollForConversion(&AdcHandle,3) == HAL_OK){
       *rpos += HAL_ADC_GetValue(&AdcHandle);
     }
+    
+    // Read from PA6 (ADC_CHANNEL_6) for column position
+    sConfig.Channel = ADC_CHANNEL_6;
+    HAL_ADC_ConfigChannel(&AdcHandle, &sConfig);
     if(HAL_ADC_PollForConversion(&AdcHandle,3) == HAL_OK){
       *cpos +=HAL_ADC_GetValue(&AdcHandle);
     }

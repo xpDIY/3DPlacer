@@ -33,6 +33,11 @@ typedef struct {
     uint16_t st; //sub type of feeder, 0 - strip, 1 - auto feeder, 2 - loose feeder
     char partId[30]; //part id
     char name[20]; //name
+    // Calibration parameters
+    uint16_t vpr;   // Voltage Per Row (default 140)
+    uint16_t vpc;   // Voltage Per Column (default 320)
+    uint16_t vprth; // Row threshold offset (default 20)
+    uint16_t vpcth; // Column threshold offset (default 50)
 }Feeder_Data_Def;
 
 extern Feeder_Data_Def feeder_data;
