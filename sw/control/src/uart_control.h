@@ -36,6 +36,8 @@ void USART1_Config(void);
 void start_receiving_one_wire(UART_HandleTypeDef *UartHandle);
 void start_sending_one_wire(UART_HandleTypeDef *UartHandle);
 uint8_t process_uart_data(uint8_t receive, uint8_t forward);
+void ProcessAMsg();
+void ReceiveUart();
 
 extern UART_HandleTypeDef UartHandle;
 extern UART_HandleTypeDef UartOwHandle;

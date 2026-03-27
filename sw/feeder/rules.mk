@@ -16,11 +16,11 @@ BDIR		= $(TOP)/$(BUILD_DIR)
 PARENTDIR	= ..
 
 # For each direcotry, add it to csources
-CSOURCES := $(foreach dir, $(CDIRS), $(shell find $(TOP)/$(dir) -maxdepth 1 -name '*.c'))
+CSOURCES := $(foreach dir, $(CDIRS), $(shell find $(TOP)/$(dir) -maxdepth 1 -name *.c))
 # Add single c source files to csources
 CSOURCES += $(addprefix $(TOP)/, $(CFILES))
 # Then assembly source folders and files
-ASOURCES := $(foreach dir, $(ADIRS), $(shell find $(TOP)/$(dir) -maxdepth 1 -name '*.s'))
+ASOURCES := $(foreach dir, $(ADIRS), $(shell find $(TOP)/$(dir) -maxdepth 1 -name *.s))
 ASOURCES += $(addprefix $(TOP)/, $(AFILES))
 
 # Fill object files with c and asm files (keep source directory structure)

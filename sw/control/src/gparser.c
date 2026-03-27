@@ -22,7 +22,7 @@ const char TR[]="TR"; //total row
 const char R[]="R";//row
 const char C[]="C";//col
 
-const int SCAN_TH=240;
+const int SCAN_TH=300;
 const int DEFAULT_TOTAL_ROW=30;
 const int DEFAULT_TOTAL_COL=12;
 const int ANS_TH=1000000;
@@ -145,15 +145,19 @@ int wait_for_receiving_ow(int wait_tick, int forward){
     return received;
 }
 
-void send_control_feeder_info(UART_HandleTypeDef *UartHandle){
+void send_control_feeder_info(UART_HandleTypeDef *UartHandle, char * param){
     read_flash((uint32_t*)&theData,sizeof(theData));
     char *toret = "3DP t:fed,id:%s,w:16,l:64,h:43,ox:%d,oy:%d,oz:%d,r:0,c:0,n:control;";
-    sprintf(msgBuf,toret,uid_to_string(HAL_GetUIDw0(),HAL_GetUIDw1(),HAL_GetUIDw2()),theData.offsetXx10,theData.offsetYx10,theData.offsetZx10);
+    if(sprintc(msgBuf, toret,uid_to_string(HAL_GetUIDw0(),HAL_GetUIDw1(),HAL_GetUIDw2()),
+    theData.offsetXx10,theData.offsetYx10,theData.offsetZx10 ) < 0){
+        //sprintf failed, return error
+        sprintf(msgBuf,"M888 R:-1,C:-1,TR:%d,TC:%d;Error:Failed to format message\r\n",tr,tc);
+    }
     HAL_UART_Transmit(UartHandle, (uint8_t *)msgBuf, strlen(msgBuf),10);
 }
 
 void query_all_component(int tr, int tc,char* param, UART_HandleTypeDef *UartHandle){
-    send_control_feeder_info(UartHandle);
+    send_control_feeder_info(UartHandle, param);
     for(int i=0;i<tr;++i){ 
         sprintf(msgBuf,"M888 R:%d,C:-2,TR:%d,TC:%d;\r\n",i,tr,tc);
         start_sending_one_wire(&UartOwHandle);
@@ -178,13 +182,16 @@ void query_all_component(int tr, int tc,char* param, UART_HandleTypeDef *UartHan
 
 int8_t parse_gcode(char * toParse,UART_HandleTypeDef *UartHandle)
 {
+    //send_control_feeder_info(UartHandle);
+    //ok(UartHandle);
+    //return TDP_OK;
     char* noSpaceMsg= trimwhitespace(toParse);
     if(strstr(noSpaceMsg,M888) == noSpaceMsg){
         //M888 detected, get parameters
         if(strlen(noSpaceMsg) == strlen(M888))
         {
             //first send base info for feeder.
-            HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
+            //HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
             query_all_component(DEFAULT_TOTAL_ROW,DEFAULT_TOTAL_COL,NULL,UartHandle);
             return TDP_OK;
         }
@@ -240,7 +247,6 @@ int8_t parse_gcode(char * toParse,UART_HandleTypeDef *UartHandle)
             sprintf(msgBuf,"\r\n%s\r\nok\r\n",param);
             msgBuf[strlen(param)+8]=0;
             HAL_UART_Transmit(UartHandle,(uint8_t*)msgBuf,strlen(msgBuf),10);
-
             return TDP_OK;
         }
         ok(UartHandle);
@@ -268,8 +274,9 @@ int8_t parse_gcode(char * toParse,UART_HandleTypeDef *UartHandle)
         return TDP_OK;
     }
 
-    sprintf(msgBuf,"\r\n%s\r\nok\r\n",noSpaceMsg);
-    msgBuf[strlen(noSpaceMsg)+8]=0;
+    //sprintf(msgBuf,"\r\n%s\r\nok\r\n",noSpaceMsg);
+    //msgBuf[strlen(noSpaceMsg)+8]=0;
+    ok(UartHandle);
  
     return TDP_OK;
 }

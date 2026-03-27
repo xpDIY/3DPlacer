@@ -4,7 +4,7 @@
 
 
 #define FAST_HOLE_SEARCH_PERIOD 10000
-#define ADVANCING_CHECK_PERIOD 80000
+#define ADVANCING_CHECK_PERIOD 180000
 
 Feeder_State feeder_state = FEEDER_IDLE;
 int state_counter=0;
@@ -13,31 +13,54 @@ uint8_t is_button_pressed=0;
 float holeProb=0;
 uint8_t prevHole=0;
 
+const int LIGHT_COUNTER=10000;
+int indicateCounter=0;
+
 //feeder data structure
 Feeder_Data_Def feeder_data;
 
 void (*finished_feeding)();
 
 void start_motor(){
-    HAL_GPIO_WritePin(GPIOB,PIN_MOTOR_A1, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_A2, GPIO_PIN_RESET);    
+    HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_A1, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_A2, GPIO_PIN_SET);    
 }
 
 void stop_motor(){
-    HAL_GPIO_WritePin(GPIOB,PIN_MOTOR_A1, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_A1, GPIO_PIN_SET);
     HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_A2, GPIO_PIN_SET);
     for(int i=0;i<5;++i);
-    HAL_GPIO_WritePin(GPIOB,PIN_MOTOR_A1, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_A1, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_A2, GPIO_PIN_RESET);
 }
 
 void led_on(){
     //turn on LED
-    HAL_GPIO_WritePin(GPIOA,PIN_LED2,GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_RESET);
 }
 void led_off(){
     //turn on LED
-    HAL_GPIO_WritePin(GPIOA,PIN_LED2,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_SET);
+}
+
+void begin_part_detection(){
+    //set part led on
+    HAL_GPIO_WritePin(GPIOB,PIN_PART_LED,GPIO_PIN_RESET);
+}
+
+void end_part_detection(){
+    //set part led off
+    HAL_GPIO_WritePin(GPIOB,PIN_PART_LED,GPIO_PIN_SET); 
+}
+
+GPIO_PinState got_hole(){
+    return GPIO_PIN_SET - HAL_GPIO_ReadPin(GPIOA,PIN_PART_DET);
+}
+
+void led_ind(){
+    //indicate that feeder is working
+    led_on();
+    indicateCounter=LIGHT_COUNTER;
 }
 
 void advance_feeder(void (*processor)()){
@@ -47,15 +70,24 @@ void advance_feeder(void (*processor)()){
 }
 
 void read_feeder_data_from_flash(){
-    read_flash((uint32_t*)&feeder_data, 60);   
+    read_flash((uint32_t*)&feeder_data, sizeof(feeder_data));   
 }
 
 void process_feeder(){
-  GPIO_PinState isHole = HAL_GPIO_ReadPin(GPIOA,PIN_PART_DET);
+  GPIO_PinState isHole = got_hole();
   GPIO_PinState isButton = HAL_GPIO_ReadPin(GPIOB,PIN_SW_B);
   if(!is_button_pressed && isButton){
     is_button_pressed = 1;
   }
+
+  // indicate the feeder
+  if(indicateCounter > 0){
+    indicateCounter--;
+    if(indicateCounter == 0){
+        led_off();
+    }
+  }
+
   //holeProb = 0.8f*holeProb + 0.2f* holeVal?1:0;
   //uint8_t isHole= holeProb>0.8f;
   switch(feeder_state){
@@ -65,7 +97,7 @@ void process_feeder(){
             feeder_state = FEEDER_ADVANCING;
             send_response=0; //do not send response when job done
         }
-        led_on();
+        begin_part_detection(); //turn photon led on
         break;
     case FEEDER_ADVANCING:
         //start motor to run till current not in hole position
