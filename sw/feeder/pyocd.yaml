@@ -1,2 +1,4 @@
 pack:
   - ../py32f0/Misc/Puya.PY32F0xx_DFP.1.1.7.pack
+
+frequency: 100000

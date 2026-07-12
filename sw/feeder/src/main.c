@@ -8,6 +8,11 @@
 
 int idxMotor=0;
 static void APP_GPIO_Config(void);
+static void APP_SWC_AsInput_Config(void);
+
+
+#define SWD_GRACE_PERIOD_MS      3000U
+#define STARTUP_MOTOR_RUN_MS     5000U
 
 void APP_ErrorHandler(void)
 { 
@@ -34,6 +39,26 @@ int main(void)
   init_adc();
   HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_SET);
   //turn on part led
+
+  // Keep SWD available for a short window after power-up (no reset pin required)
+  HAL_Delay(SWD_GRACE_PERIOD_MS);
+
+  // Reuse SWCLK pin as active-low input for cover-tape position detect
+  APP_SWC_AsInput_Config();
+
+  // Power-on motor run: reverse direction and stop early when SWC is pulled low
+  motor_dir_forward = 0;
+  start_motor();
+  uint32_t startup_motor_tick = HAL_GetTick();
+  while ((HAL_GetTick() - startup_motor_tick) < STARTUP_MOTOR_RUN_MS)
+  {
+    if (HAL_GPIO_ReadPin(GPIOA, PIN_SWC_IN) == GPIO_PIN_RESET)
+    {
+      break;
+    }
+  }
+  stop_motor();
+  motor_dir_forward = 1;
 
   //start_motor();
   /*
@@ -106,18 +131,28 @@ static void APP_GPIO_Config(void)
 
   GPIO_InitStruct.Pin = PIN_PART_DET;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  // PA12 (PD1): normally HIGH from interrupter, LOW when beam interrupted.
+  // Keep internal pulldown so released line is read as LOW.
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);    
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   //for switch control
   GPIO_InitStruct.Pin = PIN_SW_B;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);    
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);    
 
 }
 
+static void APP_SWC_AsInput_Config(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct;
 
-
+  GPIO_InitStruct.Pin = PIN_SWC_IN;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}

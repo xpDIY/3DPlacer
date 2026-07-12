@@ -49,7 +49,9 @@ int8_t parse_gcode(char * toParse,UART_HandleTypeDef *UartHandle)
 {
     char* noSpaceMsg= trimwhitespace(toParse);
     //check for m888 command
-    m888(noSpaceMsg,UartHandle);
+    if(m888(noSpaceMsg,UartHandle) == TDP_OK){
+        return TDP_OK;
+    }
 
     if(strstr(noSpaceMsg,M115) == noSpaceMsg){
         //M115 detected, get parameters
@@ -94,8 +96,10 @@ int8_t parse_gcode(char * toParse,UART_HandleTypeDef *UartHandle)
         return TDP_OK;
     }
 
+    HAL_HalfDuplex_EnableTransmitter(UartHandle);
     sprintf(msgBuf,"\r\n%s\r\nok\r\n",noSpaceMsg);
     msgBuf[strlen(noSpaceMsg)+8]=0;
- 
+    HAL_UART_Transmit(UartHandle, (uint8_t *)msgBuf, strlen(msgBuf), 10);
+    HAL_HalfDuplex_EnableReceiver(UartHandle);
     return TDP_OK;
 }

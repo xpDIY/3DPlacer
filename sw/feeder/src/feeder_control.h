@@ -11,6 +11,8 @@ extern void stop_motor();
 extern void led_on();
 extern void led_off();
 extern void led_ind();
+extern void set_part_led_voltage(uint16_t target_mv);
+extern uint8_t motor_dir_forward;
 
 typedef enum{
     FEEDER_IDLE=0U,
@@ -18,7 +20,8 @@ typedef enum{
     FEEDER_CHECK_ADVANCING_STARTING,
     FEEDER_HOLE_SEARCHING_FAST,
     FEEDER_HOLE_SEARCHING_SLOW,
-    FEEDER_HOLE_FOUND
+    FEEDER_HOLE_FOUND,
+    FEEDER_AUTO_DEBUG  // Auto feeder debug: run motor for 2s on button press
 }Feeder_State;
 
 //make sure its size is multiple of 4 bytes, for flash read/write

@@ -1,6 +1,7 @@
 
 #include "common.h"
 #include <stdarg.h>
+#include <string.h>
 
 int8_t flash_erase(){
   uint32_t SECTORError = 0;
@@ -73,36 +74,87 @@ void parse_parameters(char * param, void (*processor)(char*,char*), void (*err)(
     int paramLen=strlen(param);
     if(paramLen > 0){
         char* curr=param;
-        char* kvDel=param;
-        char* endDel=param;
-        char* key=param;
-        char* val=param;
-        while(curr-param<paramLen){
-            kvDel = strchr(curr,':');
-            if(kvDel!=NULL){
-                    *kvDel=0; //make it 0 ending string
-                if(strlen(curr)>0) key=curr;
-                endDel = strchr(kvDel+1,',');
-                if(endDel!=NULL) *endDel=0;//make val 0 ending string
-                else{
-                    endDel=strchr(kvDel+1,';');
-                    if(endDel==NULL){
-                        endDel = strchr(kvDel+1,'\n');
-                        if(endDel == NULL){
-                            err();
-                            return;
+        // Detect format: if the first token (up to space/comma/semicolon)
+        // contains ':', use colon format; otherwise use space format.
+        char* probe = strchr(curr, ';');
+        if (probe != NULL) *probe = 0; // temporarily null-terminate
+        int hasColon = (strchr(curr, ':') != NULL);
+        if (probe != NULL) *probe = ';'; // restore
+
+        if (hasColon) {
+            // Colon format: KEY:VALUE,KEY:VALUE;...
+            char* kvDel;
+            char* endDel;
+            char* key;
+            char* val;
+            while(curr-param<paramLen){
+                kvDel = strchr(curr,':');
+                if(kvDel!=NULL){
+                    *kvDel=0;
+                    key = curr;
+                    endDel = strchr(kvDel+1,',');
+                    if(endDel!=NULL) *endDel=0;
+                    else{
+                        endDel=strchr(kvDel+1,';');
+                        if(endDel==NULL){
+                            endDel = strchr(kvDel+1,'\n');
+                            if(endDel == NULL){
+                                err();
+                                return;
+                            }
                         }
+                        *endDel = 0;
                     }
-                    //if here, we are good, mark end of val
-                    *endDel = 0;                        
+                    val=kvDel+1;
+                    processor(key,val);
+                    curr = endDel+1;
+                }else{
+                    err();
+                    return;
                 }
-                if(strlen(kvDel+1)>0) val=kvDel+1; //get value string
-                //now we have key and value
-                processor(key,val);
-                curr = endDel+1;
-            }else{
-                err();
-                return;
+            }
+        } else {
+            // Space format: KEYVALUE KEYVALUE;...  (key=letters, value=rest)
+            char* endDel;
+            char keyBuf[32];
+            char valBuf[128];
+            while(curr-param<paramLen && *curr != '\0'){
+                // Skip leading spaces
+                while (*curr == ' ') curr++;
+                if (*curr == '\0' || *curr == ';') break;
+                // Find end of token (space or semicolon)
+                endDel = strchr(curr, ' ');
+                char* semi = strchr(curr, ';');
+                if (endDel == NULL || (semi != NULL && semi < endDel)) endDel = semi;
+                if (endDel == NULL) endDel = curr + strlen(curr);
+                // DEBUG: print raw token starting chars
+                int tokLen = endDel - curr;
+                // Split token: try 2-letter key first (TC, TR, PI, ST, RT, OX, OY, AD),
+                // then fall back to single-letter key (R, C, N, H).
+                int keyLen = 1;
+                if (tokLen >= 2) {
+                    char c0 = curr[0], c1 = curr[1];
+                    if ((c0 == 'T' && (c1 == 'C' || c1 == 'R'))
+                     || (c0 == 'P' && c1 == 'I')
+                     || (c0 == 'S' && c1 == 'T')
+                     || (c0 == 'R' && c1 == 'T')
+                     || (c0 == 'O' && (c1 == 'X' || c1 == 'Y'))
+                     || (c0 == 'A' && c1 == 'D')) {
+                        keyLen = 2;
+                    }
+                }
+                if (keyLen > 0) {
+                    memcpy(keyBuf, curr, keyLen);
+                    keyBuf[keyLen] = '\0';
+                    int valLen = tokLen - keyLen;
+                    if (valLen >= (int)sizeof(valBuf)) valLen = sizeof(valBuf)-1;
+                    memcpy(valBuf, curr + keyLen, valLen);
+                    valBuf[valLen] = '\0';
+                    processor(keyBuf, valBuf);
+                }
+                curr = endDel;
+                if (*curr == ';') break;
+                if (*curr == ' ') curr++;
             }
         }
     }
