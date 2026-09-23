@@ -61,6 +61,15 @@ const uint16_t VPR_DEFAULT=137;
 const uint16_t VPC_DEFAULT=320;
 const uint16_t VPCTH_DEFAULT=70;
 const uint16_t VPRTH_DEFAULT=40;
+// Default per-feeder geometry reported for a loose-part feeder that has never
+// been calibrated, in 0.1mm units:
+//   OX = -10 -> -1.0mm, OY = 0 -> 0.0mm, H = 150 -> 15.0mm
+const int16_t LOOSE_OX_DEFAULT=-10;
+const int16_t LOOSE_OY_DEFAULT=0;
+const int16_t LOOSE_H_DEFAULT=150;
+// Sub-type reported for an uncalibrated loose-part feeder: 1 = loose part, so
+// the controller creates a CassetteLoosePartFeeder instead of a CassetteFeeder.
+const uint16_t LOOSE_ST_DEFAULT=1;
 const uint8_t MAX_NAME_LEN=20;
 
 /// command parameters
@@ -277,18 +286,31 @@ int8_t m888(char * noSpaceMsg, UART_HandleTypeDef *UartHandle)
             }
             //only M800, means reading all the feeder info
             // ox/oy are returned as mm (one decimal) from the stored 0.1mm values; fall back
-            // to the legacy defaults (0.2 / -13.0) when the feeder has never been calibrated.
+            // to the per-type defaults when the feeder has never been calibrated.
             char *toret = "3DP t:fed,id:%s,pi:%d,h:%d,ox:%s,oy:%s,rt:%d,r:%d,c:%d,st:%d,n:%s;";
+#if FEEDER_TYPE == FEEDER_TYPE_LOOSE_PART
+            // Loose-part feeder defaults: OX=-1.0mm, OY=0.0mm, H=15.0mm (0.1mm units),
+            // ST=1 so the controller classifies it as a loose-part feeder.
+            int16_t ox10 = (feeder_data.offsetXx10 != -1) ? feeder_data.offsetXx10 : LOOSE_OX_DEFAULT;
+            int16_t oy10 = (feeder_data.offsetYx10 != -1) ? feeder_data.offsetYx10 : LOOSE_OY_DEFAULT;
+            int16_t h10  = (feeder_data.h != -1) ? feeder_data.h : LOOSE_H_DEFAULT;
+            uint16_t st_rep = (feeder_data.st != 0xffff) ? feeder_data.st : LOOSE_ST_DEFAULT;
+#else
             int16_t ox10 = (feeder_data.offsetXx10 != -1) ? feeder_data.offsetXx10 : 2;   // 0.2mm
             int16_t oy10 = (feeder_data.offsetYx10 != -1) ? feeder_data.offsetYx10 : -130; // -13.0mm
+            int16_t h10  = (feeder_data.h != -9999) ? feeder_data.h : 10;
+            uint16_t st_rep = (feeder_data.st != 0xffff) ? feeder_data.st : 0;
+#endif
             char ox_str[12];
             char oy_str[12];
             format_mm_tenth(ox10, ox_str);
             format_mm_tenth(oy10, oy_str);
-            uint32_t rpos,cpos;
-            PollPos(&rpos,&cpos);
-            rpos = get_rpos();
-            cpos = get_cpos();
+            // Use the position sampled once at init_adc(). PollPos() here went
+            // to shadowing locals and was immediately overwritten, but still
+            // cost ~1ms (200 ADC conversions) on every M888 reply - enough for
+            // the controller's short row-probe window to miss the reply.
+            uint32_t rpos = get_rpos();
+            uint32_t cpos = get_cpos();
             // Handle raw ADC query first (for calibration) - don't need position match
             if(raw_query){
                 HAL_HalfDuplex_EnableTransmitter(UartHandle);
@@ -303,12 +325,29 @@ int8_t m888(char * noSpaceMsg, UART_HandleTypeDef *UartHandle)
             
             if((row == get_row(rpos)) && (col == get_col(cpos))) {
                 if(ad!=0){
+#if FEEDER_TYPE == FEEDER_TYPE_LOOSE_PART
+                    // Loose-part feeder: AD1 = illumination LED on, AD2 = off.
+                    // No motor move. Reply "ok" (not 3DP): the controller adds
+                    // the "3DP ok" line that OpenPnP's actuator read matches.
+                    // Emitting 3DP here too would leave the controller's extra
+                    // 3DP line queued in OpenPnP and desync the next read.
                     if(ad==1){
                         led_on();
                     }else if(ad==2){
                         led_off();
                     }
-                    advance_feeder(on_advance_finished);
+                    done();
+#else
+                    // Auto cassette feeder: AD1 = LED on + advance one tape
+                    // hole (reply "ok" when the feed finishes), AD2 = LED off.
+                    if(ad==1){
+                        led_on();
+                        advance_feeder(on_advance_finished);
+                    }else if(ad==2){
+                        led_off();
+                        done();
+                    }
+#endif
                     return TDP_OK;
                 }
                 //set name requested, need to write flash
@@ -362,9 +401,9 @@ int8_t m888(char * noSpaceMsg, UART_HandleTypeDef *UartHandle)
                 if(!dirty){
                     HAL_HalfDuplex_EnableTransmitter(UartHandle);
                     sprintf(msgBuf,toret,uid_to_string(HAL_GetUIDw0(),HAL_GetUIDw1(),HAL_GetUIDw2()),
-                        feeder_data.pitch!=0xff?feeder_data.pitch:40,feeder_data.h!=-9999?feeder_data.h:10,
+                        feeder_data.pitch!=0xff?feeder_data.pitch:40,h10,
                         ox_str, oy_str,
-                        feeder_data.rt!=-1?feeder_data.rt:0,get_row(rpos),get_col(cpos),feeder_data.st!=0xffff?feeder_data.st:0,
+                        feeder_data.rt!=-1?feeder_data.rt:0,get_row(rpos),get_col(cpos),st_rep,
                         feeder_data.name[0]==0xff?uid_to_string(HAL_GetUIDw0(),HAL_GetUIDw1(),HAL_GetUIDw2()):feeder_data.name);
                     HAL_UART_Transmit(UartHandle, (uint8_t *)msgBuf, strlen(msgBuf),10);
                     HAL_HalfDuplex_EnableReceiver(UartHandle);

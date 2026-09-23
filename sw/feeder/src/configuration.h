@@ -26,7 +26,20 @@
 #define FEEDER_TYPE_LOOSE_PART  0
 #define FEEDER_TYPE_AUTO        1
 
-// Set the active feeder type here
+// Set the active feeder type here, or override at build time:
+//   make FEEDER_TYPE=FEEDER_TYPE_LOOSE_PART
+//   make FEEDER_TYPE=FEEDER_TYPE_AUTO
+#ifndef FEEDER_TYPE
 #define FEEDER_TYPE  FEEDER_TYPE_AUTO
+#endif
+
+#define IS_AUTO_FEEDER   (FEEDER_TYPE == FEEDER_TYPE_AUTO)
+#define IS_LOOSE_FEEDER  (FEEDER_TYPE == FEEDER_TYPE_LOOSE_PART)
+
+// LED mapping on the feeder board (PY32F002A, TQFN-16):
+//   PIN_LED1   (PA0) -> net LED1   -> on-board LED3 via R6, exposed on PAD1/PAD17
+//   PIN_LED2   (PB0) -> net LED2   -> on-board LED4 via R8
+//   PIN_PART_LED(PB1)-> net PD_LED -> photo-interrupter emitter U10, exposed on PAD3/PAD25
+//   PIN_PART_DET(PA12)-> net PD1   -> photo-interrupter output U10
 
 #endif

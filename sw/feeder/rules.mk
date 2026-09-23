@@ -117,12 +117,32 @@ $(BDIR)/$(PROJECT).elf: $(OBJS) $(TOP)/$(LDSCRIPT)
 clean:
 	rm -rf $(BDIR)/*
 
-flash:
+flash: $(BDIR)/$(PROJECT).hex
 ifeq ($(FLASH_PROGRM),jlink)
 	$(JLINKEXE) -device $(JLINK_DEVICE) -if swd -speed 4000 -JLinkScriptFile $(TOP)/../py32f0/Misc/jlink-script -CommanderScript $(TOP)/../py32f0/Misc/jlink-command
 else ifeq ($(FLASH_PROGRM),pyocd)
-	$(PYOCD_EXE) erase -t $(PYOCD_DEVICE) --chip --config $(TOP)/pyocd.yaml
-	$(PYOCD_EXE) load $(BDIR)/$(PROJECT).hex -t $(PYOCD_DEVICE) --config $(TOP)/pyocd.yaml
+	# This firmware reuses SWCLK (PA14) as the SWC input ~2s after boot, so SWD
+	# is dead while it runs. If NRST is not wired to the probe, the only way in
+	# is the short window right after a reset. Keep retrying the
+	# connect-under-reset erase, and program as soon as it succeeds - just
+	# power-cycle (or press reset on) the board while this is running.
+	@i=0; ok=0; \
+	while [ $$i -lt 120 ]; do \
+	  i=$$((i+1)); \
+	  if $(PYOCD_EXE) erase -t $(PYOCD_DEVICE) --chip --config $(TOP)/pyocd.yaml -M under-reset >/dev/null 2>&1; then \
+	    echo "[$$i] erase OK, programming $(BDIR)/$(PROJECT).hex ..."; \
+	    if $(PYOCD_EXE) load $(BDIR)/$(PROJECT).hex -t $(PYOCD_DEVICE) --config $(TOP)/pyocd.yaml 2>&1 | grep -q "programmed"; then \
+	      echo "[$$i] flash OK"; ok=1; break; \
+	    else \
+	      echo "[$$i] program failed, retrying..."; \
+	    fi; \
+	  else \
+	    printf "[%d] waiting for target reset (power-cycle / press reset)...\r" $$i; \
+	  fi; \
+	  sleep 1; \
+	done; \
+	echo; \
+	if [ $$ok -ne 1 ]; then echo "Flash failed: no reset window seen"; exit 1; fi
 else
 	@echo "FLASH_PROGRM is invalid\n"
 endif

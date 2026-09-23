@@ -11,7 +11,10 @@ static void APP_GPIO_Config(void);
 static void APP_SWC_AsInput_Config(void);
 
 
-#define SWD_GRACE_PERIOD_MS      3000U
+// Keep SWD alive briefly after power-up so the debugger can attach before
+// SWCLK is reused as the SWC input. Keep this short so the feeder starts
+// answering M888 soon after power-up.
+#define SWD_GRACE_PERIOD_MS      2000U
 #define STARTUP_MOTOR_RUN_MS     5000U
 
 void APP_ErrorHandler(void)
@@ -22,12 +25,14 @@ void APP_ErrorHandler(void)
 
 int main(void)
 {
-  HAL_Init();                  
+  HAL_Init();
+  uint32_t boot_tick = HAL_GetTick();
   BSP_HSI_24MHzClockConfig();                
   APP_GPIO_Config();
   //enable motor
   HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_EN,GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_RESET);
+  // Boot indication: LED1 stays on until the feeder is ready to answer M888.
+  HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_SET);
   HAL_GPIO_WritePin(GPIOB,PIN_LED2,GPIO_PIN_RESET);
   //This is for led push button
   read_feeder_data_from_flash();
@@ -37,16 +42,25 @@ int main(void)
   HAL_HalfDuplex_EnableReceiver(&UartOwHandle);
   for(volatile int i=0;i<1000000;++i); //wait for voltage to stabilize
   init_adc();
-  HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_SET);
-  //turn on part led
 
-  // Keep SWD available for a short window after power-up (no reset pin required)
-  HAL_Delay(SWD_GRACE_PERIOD_MS);
+  // Keep SWD available for a short window after power-up (no reset pin required).
+  // Measured from boot, so the feeder is ready to answer M888 at
+  // SWD_GRACE_PERIOD_MS after power-up (the ADC settle above is inside it).
+  {
+    uint32_t elapsed = HAL_GetTick() - boot_tick;
+    if (elapsed < SWD_GRACE_PERIOD_MS)
+    {
+      HAL_Delay(SWD_GRACE_PERIOD_MS - elapsed);
+    }
+  }
 
   // Reuse SWCLK pin as active-low input for cover-tape position detect
   APP_SWC_AsInput_Config();
 
-  // Power-on motor run: reverse direction and stop early when SWC is pulled low
+#if IS_AUTO_FEEDER
+  // Power-on motor run: reverse direction and stop early when SWC is pulled low.
+  // The loose-part feeder has no tape cover to home, so it skips this and is
+  // ready to answer M888 as soon as the SWD grace period ends.
   motor_dir_forward = 0;
   start_motor();
   uint32_t startup_motor_tick = HAL_GetTick();
@@ -59,6 +73,10 @@ int main(void)
   }
   stop_motor();
   motor_dir_forward = 1;
+#endif
+
+  // Ready to answer M888: turn off the boot indication.
+  HAL_GPIO_WritePin(GPIOA, PIN_LED1, GPIO_PIN_RESET);
 
   //start_motor();
   /*

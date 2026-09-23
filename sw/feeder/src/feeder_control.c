@@ -7,6 +7,11 @@
 
 #define SW_RELEASE_DEBOUNCE_MS 80U
 #define PULL_PD_TOGGLE_MS 1000U
+// Overall timeout for the forward hole-search phase. Without this the feeder
+// waits forever (and never answers M888 AD1) if the index sensor never toggles.
+#define ADVANCE_HOLE_TIMEOUT_MS 5000U
+// Duration of the "detection answer" indication pulse on LED1.
+#define LED_IND_MS 50U
 
 Feeder_State feeder_state = FEEDER_IDLE;
 int send_response=1;
@@ -26,8 +31,8 @@ uint8_t pull_pd_led_on=0;
 uint32_t pull_pd_last_tick=0;
 uint8_t advance_pulling_back=0; // 0=advancing forward, 1=pulling back cover
 
-const int LIGHT_COUNTER=10000;
-int indicateCounter=0;
+uint8_t led_ind_active=0;      // LED1 indication pulse in progress
+uint32_t led_ind_off_tick=0;   // tick at which the pulse must end
 //feeder data structure
 Feeder_Data_Def feeder_data;
 
@@ -51,11 +56,13 @@ void stop_motor(){
     HAL_GPIO_WritePin(GPIOA,PIN_MOTOR_A2, GPIO_PIN_RESET);
 }
 
+// LED1 net -> PA0 -> on-board LED3 (anode via R6, cathode to GND), so the LED
+// is ON when the pin is driven HIGH (active-high).
 void led_on(){
-    HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_SET);
 }
 void led_off(){
-    HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA,PIN_LED1,GPIO_PIN_RESET);
 }
 
 void part_led_on(){
@@ -71,9 +78,12 @@ GPIO_PinState got_hole(){
         ? GPIO_PIN_SET : GPIO_PIN_RESET;
 }
 
+// Brief indication that the feeder answered a detection/read: LED1 on for
+// LED_IND_MS, then off (handled in process_feeder).
 void led_ind(){
     led_on();
-    indicateCounter=LIGHT_COUNTER;
+    led_ind_active = 1;
+    led_ind_off_tick = HAL_GetTick() + LED_IND_MS;
 }
 
 void advance_feeder(void (*processor)()){
@@ -103,24 +113,29 @@ void read_feeder_data_from_flash(){
 void process_feeder(){
   GPIO_PinState isButton = HAL_GPIO_ReadPin(GPIOA,PIN_SW_B);
 
-  // LED1 always reflects photo-interrupter status (inverted: blocked=OFF, clear=ON)
-  if(HAL_GPIO_ReadPin(GPIOA, PIN_PART_DET) == GPIO_PIN_SET){
+  // LED1 (PA0 / net LED1):
+  //  - while a detection-answer pulse is active, hold it on and turn it off
+  //    after LED_IND_MS (takes priority over the sensor status below);
+  //  - AUTO cassette feeder otherwise reflects photo-interrupter status
+  //    (blocked=OFF, clear=ON);
+  //  - LOOSE part feeder leaves LED1 to the M888 AD1/AD2 commands (see m888.c).
+  if(led_ind_active){
+      if((int32_t)(HAL_GetTick() - led_ind_off_tick) >= 0){
+          led_off();
+          led_ind_active = 0;
+      }
+  }
+#if IS_AUTO_FEEDER
+  else if(HAL_GPIO_ReadPin(GPIOA, PIN_PART_DET) == GPIO_PIN_SET){
       led_off();  // PD1 HIGH = blocked
   } else {
       led_on();   // PD1 LOW = clear
   }
+#endif
 
   if(!is_button_pressed && !isButton){  // active-low: pressed = LOW
     is_button_pressed = 1;
   }
-
-  // Disabled for debugging: LED1 always shows photo-interrupter status
-  // if(indicateCounter > 0){
-  //   indicateCounter--;
-  //   if(indicateCounter == 0){
-  //       led_off();
-  //   }
-  // }
 
     // Detect button release with debounce
     uint8_t button_released_raw = is_button_pressed && isButton;
@@ -170,6 +185,17 @@ void process_feeder(){
             // reverses a little and ends up unblocked; see advance_feeder().
             //   start blocked    : seek clear (phase 1) -> STOP at blocked (phase 2)
             //   start unblocked  : seek blocked (phase 0) -> seek clear -> STOP at blocked
+            // Bail out with a response if no hole edge is seen in time.
+            if(HAL_GetTick() - advance_start_tick >= ADVANCE_HOLE_TIMEOUT_MS){
+                stop_motor();
+                hole_intr_start_tick = 0;
+                advance_hole_phase = 0;
+                advance_pulling_back = 0;
+                motor_dir_forward = 1;
+                feeder_state = FEEDER_IDLE;
+                if(send_response) finished_feeding();
+                break;
+            }
             part_led_on();
             {
                 // pin LOW = photo-interrupter interrupted = blocked

@@ -12,6 +12,10 @@ BUILD_DIR		= Build
 #   PY32F072xB
 MCU_TYPE		= PY32F002Ax5
 
+# Feeder variant: FEEDER_TYPE_LOOSE_PART or FEEDER_TYPE_AUTO
+# Override on the command line:  make FEEDER_TYPE=FEEDER_TYPE_LOOSE_PART
+FEEDER_TYPE		?= FEEDER_TYPE_AUTO
+
 ##### Options #####
 
 # Use LL library instead of HAL, y:yes, n:no
@@ -61,7 +65,7 @@ INCLUDES	:= ../py32f0/Libraries/CMSIS/Core/Include \
 ##### Library Paths ############
 
 # Library flags
-LIB_FLAGS		= $(MCU_TYPE)
+LIB_FLAGS		= $(MCU_TYPE) FEEDER_TYPE=$(FEEDER_TYPE)
 # JLink device (Uppercases)
 JLINK_DEVICE	?= $(shell echo $(MCU_TYPE) | tr '[:lower:]' '[:upper:]')
 # PyOCD device (Lowercases)

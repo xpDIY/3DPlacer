@@ -187,13 +187,27 @@ HAL_StatusTypeDef UART_Begin_Receive(UART_HandleTypeDef *huart, uint8_t *pData)
 void process_ow_data()
 {
   if(UART_Begin_Receive(&UartOwHandle,(uint8_t *)aRxBuffer) == HAL_OK){
-    aMsg[idxA] = *aRxBuffer;
-    bMsg[idx] = aMsg[idxA];
-    bMsg[++idx] = 0;
-    if(++idxA>4) idxA=0;
+    uint8_t ch = *aRxBuffer;
+    if(idx >= sizeof(bMsg)-1){
+      idx = 0;  // buffer full: resync
+    }
+    bMsg[idx++] = ch;
+    bMsg[idx] = 0;
 
-    if(bMsg[idx-1] == 13){
-      parse_gcode(bMsg,&UartOwHandle);
+    if(ch == 13){
+      // Every feeder hears every command AND every other feeder's reply on the
+      // shared 1-wire bus. A reply has no CR, so it can end up prefixed to our
+      // own command here. Skip to the real command start, otherwise the next
+      // command is treated as garbage and this feeder is silently skipped
+      // whenever a second feeder is present.
+      char *cmd = bMsg;
+      if(bMsg[0] != 'M'){
+        cmd = strstr(bMsg, "M888");
+        if(cmd == NULL) cmd = strstr(bMsg, "M114");
+        if(cmd == NULL) cmd = strstr(bMsg, "M115");
+        if(cmd == NULL) cmd = bMsg;   // unknown -> parser ignores it
+      }
+      parse_gcode(cmd,&UartOwHandle);
       idx=0;
     }
   }

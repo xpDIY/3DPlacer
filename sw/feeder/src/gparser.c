@@ -96,10 +96,8 @@ int8_t parse_gcode(char * toParse,UART_HandleTypeDef *UartHandle)
         return TDP_OK;
     }
 
-    HAL_HalfDuplex_EnableTransmitter(UartHandle);
-    sprintf(msgBuf,"\r\n%s\r\nok\r\n",noSpaceMsg);
-    msgBuf[strlen(noSpaceMsg)+8]=0;
-    HAL_UART_Transmit(UartHandle, (uint8_t *)msgBuf, strlen(msgBuf), 10);
-    HAL_HalfDuplex_EnableReceiver(UartHandle);
-    return TDP_OK;
+    // Unknown line. Do NOT echo it: on the shared 1-wire bus a feeder would
+    // otherwise echo another feeder's reply (or a framed command) back onto
+    // the bus and corrupt the scan when more than one feeder is connected.
+    return TDP_ERR;
 }
